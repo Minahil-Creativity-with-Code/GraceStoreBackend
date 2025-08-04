@@ -1,25 +1,42 @@
 const express = require('express');
-const multer = require('multer');  // For file uploads
-const path = require('path');  // For path manipulation
-const User = require('../models/User'); // Adjust if path differs
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const User = require('../models/User');
 
 const router = express.Router();
 
-// Multer config for file upload
+// === Ensure the images folder exists ===
+const imagesDir = path.join(__dirname, '../public/images');
+if (!fs.existsSync(imagesDir)) {
+  fs.mkdirSync(imagesDir, { recursive: true });
+}
+
+// === Multer Configuration ===
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads'); // directory to save images
+    cb(null, imagesDir);
   },
   filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
-    const fileName = `${Date.now()}-${file.fieldname}${ext}`;
-    cb(null, fileName);
+    cb(null, `img-${uniqueSuffix}${ext}`);
   }
 });
-const upload = multer({ storage });
-// ===== Routes =====
 
-//Login
+const upload = multer({ storage });
+
+// === Upload Test Route (optional) ===
+router.post('/upload', upload.single('userImage'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+  res.status(200).json({ filename: req.file.filename });
+});
+
+// === User Routes ===
+
+// Login
 router.post('/login', async (req, res) => {
   try {
     const { name, password } = req.body;
@@ -46,7 +63,9 @@ router.post('/', upload.single('profileImage'), async (req, res) => {
       profession,
       gender,
       address,
-      phone
+      phone,
+      status,
+      bio
     } = req.body;
 
     const newUser = new User({
@@ -58,7 +77,9 @@ router.post('/', upload.single('profileImage'), async (req, res) => {
       gender,
       address,
       phone,
-      profileImage: req.file ? req.file.filename : null
+      status,
+      bio,
+      image: req.file ? req.file.filename : null
     });
 
     const savedUser = await newUser.save();
@@ -78,7 +99,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Get Single User by ID
+// Get Single User
 router.get('/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -95,7 +116,7 @@ router.put('/:id', upload.single('profileImage'), async (req, res) => {
     const updates = { ...req.body };
 
     if (req.file) {
-      updates.profileImage = req.file.filename;
+      updates.image = req.file.filename;
     }
 
     const updatedUser = await User.findByIdAndUpdate(req.params.id, updates, {

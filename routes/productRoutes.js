@@ -151,21 +151,32 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-//Search Product by Name (Case-Insansitive)
-router.get('/search', async (req, res) => {
-  const { name, category } = req.query;
-  const query = {};
-
-  if (name) query.name = new RegExp(name, 'i'); 
-  if (category) query.category = category;
+// 🔍 Search by name (case-insensitive): /search/:name
+router.get('/search/:name', async (req, res) => {
+  const { name } = req.params;
 
   try {
-    const products = await Product.find(query);
+    const products = await Product.find({ name: new RegExp(name, 'i') });
     res.status(200).json(products);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Name search error:', err);
+    res.status(500).json({ error: err.message || 'Server error' });
   }
 });
+
+// 🔍 Search by category: /search/category/:category
+router.get('/search/category/:category', async (req, res) => {
+  const { category } = req.params;
+
+  try {
+    const products = await Product.find({ category }).sort({ createdAt: -1 });
+    res.status(200).json(products);
+  } catch (err) {
+    console.error('Category search error:', err);
+    res.status(500).json({ error: err.message || 'Server error' });
+  }
+});
+
 
 //Get Product in pages 1-5 
 //Paginated Product List

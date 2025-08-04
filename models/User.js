@@ -1,6 +1,6 @@
-const mongoose = require('mongoose'); //imports the library,used to define schemas and interact with MongoDB in an object-oriented way.
+const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({ //the structure of an order document in MongoDB
+const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -14,6 +14,12 @@ const userSchema = new mongoose.Schema({ //the structure of an order document in
   address: String,
   phone: String,
   image: String,
+  status: {
+    type: String,
+    enum: ['Active', 'Inactive'],
+    default: 'Active'
+  },
+  bio: String,
   createdAt: { type: Date, default: Date.now },
 });
 
